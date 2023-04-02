@@ -7,14 +7,35 @@ import (
     "os"
 	"path/filepath"
 	"sync"
+    "strconv"
 )
 
 func main() {
-    downloadImages(52, "images", 25)
-    fmt.Println("Downloaded 52 random Unsplash images to the 'images' folder.")
+    var total int
+    var folderName, searchTerm string
+
+    if len(os.Args) > 1 {
+        totalInStr := os.Args[1]
+        totalInInt, err := strconv.Atoi(totalInStr)
+        if err != nil {
+            fmt.Println("Please enter a valid number for the total of images to download.")
+            os.Exit(1)
+        }
+
+        total = totalInInt
+        folderName = os.Args[2]
+        searchTerm = os.Args[3]
+    } else {
+        total = 52
+        folderName = "images"
+        searchTerm = "drink"
+    }
+
+    downloadImages(total, folderName, searchTerm, 10)
+    fmt.Printf("Downloaded %d images to %s folder\n", total, folderName)
 }
 
-func downloadImages(count int, folderPath string, workers int) {
+func downloadImages(count int, folderPath string, searchTerm string, workers int) {
     folderLocation := createFolderIfNotExists(folderPath)
     wg := &sync.WaitGroup{}
     jobs := make(chan int, count)
@@ -28,7 +49,7 @@ func downloadImages(count int, folderPath string, workers int) {
         go func() {
             defer wg.Done()
             for job := range jobs {
-                imageUrl := fmt.Sprintf("https://source.unsplash.com/random/300x300?sig=%d", job)
+                imageUrl := fmt.Sprintf("https://source.unsplash.com/random/300x300/?%s", searchTerm)
                 fileName := fmt.Sprintf("%02d.jpg", job)
                 fileLocation := filepath.Join(folderLocation, fileName)
                 err := downloadImage(imageUrl, fileLocation)
